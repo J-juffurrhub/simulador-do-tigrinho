@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Smartphone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        .smartphone {
+            width: 380px;
+            height: 800px;
+            border: 16px solid black;
+            border-radius: 40px;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 0 10px rgba(0,0,0,0.5);
+            background-color: #f0f0f0;
+            overflow: hidden;
+        }
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: url('https://placehold.co/380x800/8a2be2/ffffff?text=Fundo') no-repeat center center/cover;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 30px;
+            background: black;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 10;
+        }
+        .status-bar {
+            padding: 0 15px;
+            padding-top: 5px;
+            height: 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: 500;
+            z-index: 5;
+        }
+        .battery-icon { position: relative; }
+        .battery-level { position: absolute; top: 2px; left: 2px; height: 8px; width: 14px; background-color: white; border-radius: 1px; }
+        .home-screen {
+            flex-grow: 1;
+            padding: 40px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            justify-items: center;
+        }
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .app-icon:active { transform: scale(0.9); }
+        .app-icon .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid white;
+        }
+        .app-icon span {
+            margin-top: 8px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .dock {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center;
+        }
+        .lock-screen {
+            background: url('https://placehold.co/380x800/1e1b4b/ffffff?text=Bloqueado') no-repeat center center/cover;
+            justify-content: space-between; padding: 80px 20px;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+        .lock-screen.unlocked { opacity: 0; transform: scale(1.1); pointer-events: none; }
+        .game-over-screen { background-color: rgba(0,0,0,0.85); z-index: 99; }
+        .lock-time { font-size: 5rem; font-weight: 700; }
+        .lock-date { font-size: 1.5rem; font-weight: 400; }
+        .swipe-to-unlock { font-size: 1rem; font-weight: 500; padding: 10px 20px; background: rgba(0,0,0,0.3); border-radius: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .app-view {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f0f0; z-index: 15;
+            transform: translateX(100%); transition: transform 0.3s ease-in-out;
+            display: flex; flex-direction: column;
+        }
+        .app-view.active { transform: translateX(0); }
+        .app-header { background-color: #333; color: white; padding: 10px; display: flex; align-items: center; flex-shrink: 0; }
+        .back-button { background: none; border: none; color: white; font-size: 20px; margin-right: 15px; cursor: pointer; }
+        .app-content { flex-grow: 1; overflow: auto; }
+        .app-content iframe { width: 100%; height: 100%; border: none; }
+        .toast { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background-color: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; z-index: 100; opacity: 0; transition: opacity 0.3s; }
+        .toast.show { opacity: 1; }
+        .progress-bar-container { background-color: #e0e0e0; border-radius: 9999px; overflow: hidden; }
+        .progress-bar { height: 100%; border-radius: 9999px; transition: width 0.5s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-800 flex items-center justify-center min-h-screen">
+
+    <div class="smartphone">
+        <div class="screen">
+            <div class="notch"></div>
+            
+            <div id="lock-screen" class="overlay lock-screen">
+                <div class="text-center">
+                    <div id="lock-time" class="lock-time"></div>
+                    <div id="lock-date" class="lock-date"></div>
+                </div>
+                <div id="swipe-area" class="swipe-to-unlock"><i class="fas fa-chevron-up"></i> Deslize para desbloquear</div>
+            </div>
+            
+            <div id="game-over-screen" class="overlay game-over-screen hidden">
+                <div class="text-center p-4">
+                    <div id="game-over-icon" class="text-6xl mb-4"></div>
+                    <h2 class="text-3xl font-bold mb-2">Fim de Jogo</h2>
+                    <p id="game-over-message" class="mb-6"></p>
+                    <button id="play-again-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg">Jogar Novamente</button>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div id="time"></div>
+                <div class="flex items-center gap-2">
+                    <i id="internet-icon" class="fas fa-signal"></i>
+                    <i id="water-icon" class="fas fa-tint text-blue-300"></i>
+                    <div class="battery-icon text-xl"><i id="battery-status-icon" class="fas fa-battery-three-quarters"></i></div>
+                </div>
+            </div>
+
+            <main class="home-screen">
+                <div class="app-grid">
+                    <div class="app-icon" data-app="tigrinho"><div class="icon" style="background: linear-gradient(135deg, #f97316, #ea580c);">🐯</div><span>Tigrinho</span></div>
+                    <div class="app-icon" data-app="banco"><div class="icon" style="background: linear-gradient(135deg, #16a34a, #15803d);">💰</div><span>Banco</span></div>
+                    <div class="app-icon" data-app="trabalho"><div class="icon" style="background: #3b82f6;">💼</div><span>Trabalho</span></div>
+                    <div class="app-icon" data-app="fansclub"><div class="icon" style="background: #ec4899;">💖</div><span>Fans Club</span></div>
+                </div>
+                
+                <div class="dock">
+                    <div class="app-icon" data-app="whatsapp"><div class="icon" style="background: #25D366;"><i class="fab fa-whatsapp"></i></div><div id="whatsapp-badge" class="notification-badge hidden"></div></div>
+                    <div class="app-icon" data-app="pet"><div class="icon" style="background: #8B4513;">💩</div><span>Meu Pet</span></div>
+                    <div class="app-icon"><div class="icon bg-gray-700"><i class="fas fa-camera"></i></div></div>
+                    <div class="app-icon"><div class="icon bg-red-500"><i class="fab fa-youtube"></i></div></div>
+                </div>
+            </main>
+
+            <div id="app-view" class="app-view">
+                <div class="app-header">
+                    <button id="back-button" class="back-button">&lt;</button>
+                    <h3 id="app-title">App</h3>
+                </div>
+                <div id="app-content" class="app-content"></div>
+            </div>
+
+            <div id="toast" class="toast"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elementos do DOM
+            const timeEl = document.getElementById('time'), lockTimeEl = document.getElementById('lock-time'), lockDateEl = document.getElementById('lock-date');
+            const lockScreen = document.getElementById('lock-screen'), swipeArea = document.getElementById('swipe-area');
+            const gameOverScreen = document.getElementById('game-over-screen'), gameOverIcon = document.getElementById('game-over-icon'), gameOverMessage = document.getElementById('game-over-message'), playAgainButton = document.getElementById('play-again-button');
+            const appView = document.getElementById('app-view'), appTitle = document.getElementById('app-title'), appContent = document.getElementById('app-content'), backButton = document.getElementById('back-button');
+            const batteryStatusIcon = document.getElementById('battery-status-icon'), internetIcon = document.getElementById('internet-icon'), waterIcon = document.getElementById('water-icon');
+            const whatsappBadge = document.getElementById('whatsapp-badge'), toastEl = document.getElementById('toast');
+            
+            let gameIntervals = [];
+
+            // Estado Global do Jogo
+            const initialGameState = {
+                bankBalance: 500.00,
+                battery: 100,
+                isElectricityOn: true,
+                isWaterOn: true,
+                isInternetOn: true,
+                timeWithoutWater: 0,
+                isAccountFrozen: false,
+                workCooldown: 0,
+                fansClubCooldown: 0,
+                unreadMessages: 0,
+                bills: [],
+                messages: [],
+                pet: {
+                    hunger: 80,
+                    happiness: 80,
+                }
+            };
+            let gameState = { ...initialGameState };
+
+            // --- LÓGICA PRINCIPAL DO JOGO (SIMULAÇÃO DE TEMPO) ---
+            function gameTick() {
+                // Drenar bateria
+                const drainRate = gameState.isElectricityOn ? 0.05 : 0.8;
+                gameState.battery -= drainRate;
+                if (gameState.battery <= 0) {
+                    triggerGameOver('battery');
+                    return;
+                }
+
+                // Cooldowns
+                if (gameState.workCooldown > 0) gameState.workCooldown--;
+                if (gameState.fansClubCooldown > 0) gameState.fansClubCooldown--;
+
+                // Verificar falta de água
+                if (!gameState.isWaterOn) {
+                    gameState.timeWithoutWater++;
+                    if (gameState.timeWithoutWater > 120) { // 2 minutos
+                        triggerGameOver('water');
+                        return;
+                    }
+                } else {
+                    gameState.timeWithoutWater = 0;
+                }
+
+                // Drenar status do Pet
+                if (gameState.pet.hunger > 0) gameState.pet.hunger -= 0.2;
+                if (gameState.pet.happiness > 0) gameState.pet.happiness -= 0.3;
+
+                updateUI();
+            }
+            
+            function generateBill() {
+                const billTypes = [
+                    { type: 'Luz', amount: 150, service: 'isElectricityOn' },
+                    { type: 'Água', amount: 80, service: 'isWaterOn' },
+                    { type: 'Internet', amount: 100, service: 'isInternetOn' }
+                ];
+                const bill = billTypes[Math.floor(Math.random() * billTypes.length)];
+                
+                if (!gameState.bills.find(b => b.type === bill.type)) {
+                    gameState.bills.push({ ...bill, paid: false, isRent: false });
+                    addMessage('Sistema', `Sua conta de ${bill.type} de R$${bill.amount.toFixed(2)} chegou.`);
+                    gameState[bill.service] = false;
+                }
+                updateUI();
+            }
+            
+            function generateRentBill() {
+                if (gameState.bills.some(b => b.isRent && !b.paid)) {
+                    triggerGameOver('eviction');
+                    return;
+                }
+                gameState.bills.push({ type: 'Aluguel', amount: 500, paid: false, isRent: true });
+                addMessage('Imobiliária', `O seu aluguel de R$500.00 venceu.`);
+                updateUI();
+            }
+
+            function triggerRandomEvent() {
+                const events = [
+                    { name: 'Golpe do PIX', chance: 0.2, action: () => {
+                        const amount = Math.min(gameState.bankBalance * 0.5, 300);
+                        if (amount > 1) {
+                            gameState.bankBalance -= amount;
+                            addMessage('GOLPE!', `Você caiu num golpe e perdeu R$${amount.toFixed(2)}!`);
+                        }
+                    }},
+                    { name: 'Investigação F.B.I.', chance: 0.15, action: () => {
+                        gameState.isAccountFrozen = true;
+                        addMessage('F.B.I.', 'Sua conta foi congelada por atividades suspeitas.');
+                        setTimeout(() => {
+                            gameState.isAccountFrozen = false;
+                            addMessage('F.B.I.', 'Sua conta foi descongelada.');
+                        }, 30000); // Congelada por 30 segundos
+                    }},
+                    { name: 'Bônus Inesperado', chance: 0.1, action: () => {
+                        const amount = 50;
+                        gameState.bankBalance += amount;
+                        addMessage('Sorte!', `Você recebeu um bônus inesperado de R$${amount.toFixed(2)}!`);
+                    }}
+                ];
+
+                for (const event of events) {
+                    if (Math.random() < event.chance) {
+                        event.action();
+                        break; 
+                    }
+                }
+                updateUI();
+            }
+            
+            function triggerGameOver(reason) {
+                gameIntervals.forEach(clearInterval);
+                gameIntervals = [];
+
+                const reasons = {
+                    'battery': { icon: '🔋', message: 'A sua bateria acabou por falta de luz!' },
+                    'water': { icon: '💧', message: 'Você ficou sem água por muito tempo!' },
+                    'eviction': { icon: '�', message: 'Você não pagou o aluguel e foi despejado!' }
+                };
+                
+                gameOverIcon.innerHTML = reasons[reason].icon;
+                gameOverMessage.textContent = reasons[reason].message;
+                gameOverScreen.classList.remove('hidden');
+            }
+            
+            function addMessage(from, text) {
+                gameState.messages.unshift({ from, text });
+                gameState.unreadMessages++;
+                window.showToast(`Nova mensagem de ${from}!`);
+                updateUI();
+            }
+
+            // --- LÓGICA DOS APPS ---
+            function openApp(appName) {
+                if (gameState.isAccountFrozen && (appName === 'banco' || appName === 'tigrinho' || appName === 'trabalho' || appName === 'fansclub')) {
+                    window.showToast("Conta congelada pelo F.B.I.!");
+                    return;
+                }
+
+                appTitle.textContent = appName.charAt(0).toUpperCase() + appName.slice(1);
+                appContent.innerHTML = ''; 
+                
+                switch(appName) {
+                    case 'tigrinho':
+                        if (!gameState.isInternetOn) {
+                            window.showToast("Sem conexão com a internet!");
+                            return;
+                        }
+                        appContent.innerHTML = `<iframe srcdoc='${getTigrinhoHTML().replace(/'/g, "&apos;")}'></iframe>`;
+                        break;
+                    case 'banco':
+                        appContent.innerHTML = renderBankApp();
+                        break;
+                    case 'whatsapp':
+                        gameState.unreadMessages = 0;
+                        appContent.innerHTML = renderWhatsApp();
+                        updateUI();
+                        break;
+                    case 'pet':
+                        appContent.innerHTML = renderPetApp();
+                        break;
+                    case 'trabalho':
+                        appContent.innerHTML = renderWorkApp();
+                        break;
+                    case 'fansclub':
+                        appContent.innerHTML = renderFansClubApp();
+                        break;
+                }
+                appView.classList.add('active');
+            }
+
+            function closeApp() {
+                appView.classList.remove('active');
+                setTimeout(() => { appContent.innerHTML = ''; }, 300);
+            }
+
+            // --- RENDERIZAÇÃO DOS APPS ---
+            function renderBankApp() {
+                let billsHTML = gameState.bills.map((bill, index) => `
+                    <div class="flex justify-between items-center p-3 border-b ${bill.paid ? 'bg-green-100' : 'bg-red-100'}">
+                        <div>
+                            <p class="font-bold">${bill.type} - R$${bill.amount.toFixed(2)}</p>
+                            <p class="text-sm">${bill.paid ? 'Status: Paga' : 'Status: Pendente'}</p>
+                        </div>
+                        ${!bill.paid ? `<button class="bg-blue-500 text-white px-4 py-2 rounded" onclick="payBill(${index})">Pagar</button>` : ''}
+                    </div>
+                `).join('');
+
+                if (gameState.bills.length === 0) billsHTML = '<p class="p-4 text-gray-500">Nenhuma conta pendente.</p>';
+                
+                return `
+                    <div class="p-4 bg-white">
+                        <div class="text-center p-6 bg-gray-100 rounded-lg mb-4">
+                            <p class="text-gray-500">Saldo Disponível</p>
+                            <p id="bank-balance" class="text-4xl font-bold">R$${gameState.bankBalance.toFixed(2)}</p>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Contas a Pagar</h3>
+                        <div>${billsHTML}</div>
+                    </div>`;
+            }
+
+            function renderWhatsApp() {
+                let messagesHTML = gameState.messages.map(msg => `
+                    <div class="p-3 m-2 bg-green-100 rounded-lg max-w-xs self-start">
+                        <p class="font-bold text-sm text-purple-600">${msg.from}</p>
+                        <p>${msg.text}</p>
+                    </div>`).join('');
+                if (gameState.messages.length === 0) messagesHTML = '<p class="p-4 text-gray-500">Nenhuma mensagem.</p>';
+                return `<div class="p-2 flex flex-col">${messagesHTML}</div>`;
+            }
+
+            function renderPetApp() {
+                const { hunger, happiness } = gameState.pet;
+                function getPetFace() {
+                    if (hunger < 20 || happiness < 20) return '😭';
+                    if (happiness > 80 && hunger > 80) return '😄';
+                    if (happiness < 50 || hunger < 50) return '😐';
+                    return '🙂';
+                }
+                return `
+                    <div class="p-4 bg-amber-100 h-full flex flex-col justify-between">
+                        <div>
+                            <div class="text-center my-8"><div class="text-8xl">${getPetFace()}</div><p class="font-bold text-xl mt-2">Meu Pet</p></div>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-1 font-semibold"><p>Fome</p><p>${Math.round(hunger)}%</p></div>
+                                    <div class="progress-bar-container w-full h-4"><div class="progress-bar bg-red-500" style="width: ${hunger}%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1 font-semibold"><p>Felicidade</p><p>${Math.round(happiness)}%</p></div>
+                                    <div class="progress-bar-container w-full h-4"><div class="progress-bar bg-yellow-400" style="width: ${happiness}%"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-8">
+                            <button class="bg-green-500 text-white font-bold py-4 rounded-lg" onclick="feedPet()">Alimentar (R$10)</button>
+                            <button class="bg-blue-500 text-white font-bold py-4 rounded-lg" onclick="playWithPet()">Brincar (R$5)</button>
+                        </div>
+                    </div>`;
+            }
+            
+            function renderWorkApp() {
+                const isDisabled = gameState.workCooldown > 0;
+                return `
+                    <div class="p-8 text-center flex flex-col justify-center items-center h-full bg-gray-200">
+                        <i class="fas fa-briefcase text-8xl text-gray-500 mb-6"></i>
+                        <h2 class="text-3xl font-bold mb-4">Agência de Empregos</h2>
+                        <p class="mb-8">Ganhe dinheiro de forma honesta.</p>
+                        <button id="work-button" class="w-full bg-blue-600 text-white font-bold py-6 rounded-lg text-2xl ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}" onclick="doWork()" ${isDisabled ? 'disabled' : ''}>
+                            ${isDisabled ? `Disponível em ${gameState.workCooldown}s` : 'Trabalhar (Ganha R$80)'}
+                        </button>
+                    </div>`;
+            }
+            
+            function renderFansClubApp() {
+                const isDisabled = gameState.fansClubCooldown > 0;
+                return `
+                    <div class="p-8 text-center flex flex-col justify-center items-center h-full bg-pink-100">
+                        <i class="fas fa-heart text-8xl text-pink-500 mb-6"></i>
+                        <h2 class="text-3xl font-bold mb-4">Fans Club</h2>
+                        <p class="mb-8">Poste conteúdo para seus fãs e arrisque ganhar uma grana.</p>
+                        <button id="fans-button" class="w-full bg-pink-500 text-white font-bold py-6 rounded-lg text-2xl ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-pink-600'}" onclick="postOnFansClub()" ${isDisabled ? 'disabled' : ''}>
+                             ${isDisabled ? `Disponível em ${gameState.fansClubCooldown}s` : 'Postar Conteúdo'}
+                        </button>
+                    </div>`;
+            }
+            
+            // --- AÇÕES DO USUÁRIO ---
+            window.payBill = (index) => {
+                const bill = gameState.bills[index];
+                if (gameState.bankBalance >= bill.amount) {
+                    gameState.bankBalance -= bill.amount;
+                    bill.paid = true;
+                    if (!bill.isRent) gameState[bill.service] = true;
+                    window.showToast(`${bill.type} paga!`);
+                    setTimeout(() => {
+                        gameState.bills.splice(index, 1);
+                        if (appTitle.textContent === 'Banco') appContent.innerHTML = renderBankApp();
+                    }, 2000);
+                } else {
+                    window.showToast("Saldo insuficiente!");
+                }
+                if (appTitle.textContent === 'Banco') appContent.innerHTML = renderBankApp();
+                updateUI();
+            };
+
+            window.feedPet = () => {
+                const cost = 10;
+                if (gameState.bankBalance >= cost) {
+                    if (gameState.pet.hunger < 100) {
+                        gameState.bankBalance -= cost;
+                        gameState.pet.hunger = Math.min(100, gameState.pet.hunger + 25);
+                        window.showToast('Você alimentou seu pet! (-R$10)');
+                        if (appTitle.textContent === 'Pet') appContent.innerHTML = renderPetApp();
+                        updateUI();
+                    } else {
+                        window.showToast('Seu pet não está com fome.');
+                    }
+                } else {
+                    window.showToast('Dinheiro insuficiente!');
+                }
+            };
+
+            window.playWithPet = () => {
+                const cost = 5;
+                if (gameState.bankBalance >= cost) {
+                    if (gameState.pet.happiness < 100) {
+                        gameState.bankBalance -= cost;
+                        gameState.pet.happiness = Math.min(100, gameState.pet.happiness + 20);
+                        window.showToast('Você brincou com seu pet! (-R$5)');
+                        if (appTitle.textContent === 'Pet') appContent.innerHTML = renderPetApp();
+                        updateUI();
+                    } else {
+                        window.showToast('Seu pet já está muito feliz!');
+                    }
+                } else {
+                    window.showToast('Dinheiro insuficiente!');
+                }
+            };
+            
+            window.doWork = () => {
+                if (gameState.workCooldown <= 0) {
+                    gameState.workCooldown = 15; // Cooldown de 15 segundos
+                    setTimeout(() => {
+                        const earnings = 80;
+                        gameState.bankBalance += earnings;
+                        window.showToast(`Você trabalhou e ganhou R$${earnings.toFixed(2)}!`);
+                        updateUI();
+                    }, 8000); // Simula 8 horas de trabalho em 8 segundos
+                    document.getElementById('work-button').disabled = true;
+                    document.getElementById('work-button').innerHTML = `Trabalhando...`;
+                }
+            };
+
+            window.postOnFansClub = () => {
+                if (gameState.fansClubCooldown <= 0) {
+                    gameState.fansClubCooldown = 20; // Cooldown de 20 segundos
+                    const earnings = Math.floor(Math.random() * 201) + 50; // Ganha entre 50 e 250
+                    gameState.bankBalance += earnings;
+                    window.showToast(`Seu post foi um sucesso! Você ganhou R$${earnings.toFixed(2)}!`);
+                    if (appTitle.textContent === 'Fansclub') appContent.innerHTML = renderFansClubApp();
+                    updateUI();
+                }
+            };
+            
+            // --- ATUALIZAÇÃO DA UI GERAL ---
+            function updateUI() {
+                const bankBalanceEl = document.getElementById('bank-balance');
+                if (bankBalanceEl) bankBalanceEl.textContent = `R$${gameState.bankBalance.toFixed(2)}`;
+                
+                if (gameState.battery > 75) batteryStatusIcon.className = 'fas fa-battery-full';
+                else if (gameState.battery > 50) batteryStatusIcon.className = 'fas fa-battery-three-quarters';
+                else if (gameState.battery > 25) batteryStatusIcon.className = 'fas fa-battery-half';
+                else if (gameState.battery > 5) batteryStatusIcon.className = 'fas fa-battery-quarter';
+                else batteryStatusIcon.className = 'fas fa-battery-empty text-red-500';
+
+                internetIcon.style.color = gameState.isInternetOn ? 'white' : '#6b7280';
+                waterIcon.style.color = gameState.isWaterOn ? 'white' : '#6b7280';
+                
+                if (gameState.unreadMessages > 0) {
+                    whatsappBadge.textContent = gameState.unreadMessages;
+                    whatsappBadge.classList.remove('hidden');
+                } else {
+                    whatsappBadge.classList.add('hidden');
+                }
+            }
+
+            // --- INICIALIZAÇÃO E EVENTOS ---
+            function startGame() {
+                gameIntervals.forEach(clearInterval);
+                gameIntervals = [];
+                gameState = JSON.parse(JSON.stringify(initialGameState));
+                gameOverScreen.classList.add('hidden');
+                
+                function updateClock() {
+                    const now = new Date();
+                    const timeString = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    const dateString = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+                    timeEl.textContent = timeString;
+                    lockTimeEl.textContent = timeString;
+                    lockDateEl.textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+                }
+                
+                gameIntervals.push(setInterval(updateClock, 1000));
+                gameIntervals.push(setInterval(gameTick, 1000));
+                gameIntervals.push(setInterval(generateBill, 60000));
+                gameIntervals.push(setInterval(generateRentBill, 300000)); // Aluguel a cada 5 minutos
+                gameIntervals.push(setInterval(triggerRandomEvent, 90000));
+                
+                updateUI();
+                generateBill();
+            }
+            
+            swipeArea.addEventListener('click', () => lockScreen.classList.add('unlocked'));
+
+            document.querySelectorAll('.app-icon[data-app]').forEach(icon => {
+                icon.addEventListener('click', () => openApp(icon.dataset.app));
+            });
+            backButton.addEventListener('click', closeApp);
+            playAgainButton.addEventListener('click', startGame);
+
+            window.addEventListener('message', (event) => {
+                const data = event.data;
+                if (!data || !data.type) return;
+
+                switch (data.type) {
+                    case 'tigrinhoReady':
+                        const iframe = appContent.querySelector('iframe');
+                        if (iframe) {
+                            iframe.contentWindow.postMessage({ type: 'init', balance: gameState.bankBalance }, '*');
+                        }
+                        break;
+                    case 'spin':
+                        if (gameState.bankBalance >= data.amount) {
+                            gameState.bankBalance -= data.amount;
+                        }
+                        updateUI();
+                        break;
+                    case 'win':
+                        gameState.bankBalance += data.amount;
+                        updateUI();
+                        break;
+                }
+            });
+
+            // --- FUNÇÕES AUXILIARES ---
+            window.showToast = function(message, isWarning = false) {
+                toastEl.textContent = message;
+                toastEl.style.backgroundColor = isWarning ? 'rgba(239, 68, 68, 0.8)' : 'rgba(0,0,0,0.8)';
+                toastEl.classList.add('show');
+                setTimeout(() => { toastEl.classList.remove('show'); }, 3000);
+            }
+            
+            // --- CÓDIGO DO JOGO DO TIGRINHO ---
+            function getTigrinhoHTML() {
+                return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+                    <style>
+                        body { font-family: 'Poppins', sans-serif; overflow: hidden; }
+                        .slot-container { background: linear-gradient(145deg, #4a044e, #7e22ce); border: 2px solid #fbbf24; }
+                        .reel { width: 60px; height: 80px; background-color: rgba(255, 255, 255, 0.1); border: 1px solid #facc15; border-radius: 8px; font-size: 2rem; overflow: hidden; position: relative; display: flex; justify-content: center; align-items: center; }
+                        .reel-symbols { position: absolute; top: 0; left: 0; width: 100%; transition: top 2.5s ease-in-out; }
+                        .reel-symbols > div { width: 100%; height: 80px; display: flex; justify-content: center; align-items: center; }
+                        .btn-spin { background: linear-gradient(180deg, #f59e0b, #d97706); }
+                        .bet-btn { background-color: #9333ea; }
+                    </style>
+                </head>
+                <body class="bg-purple-900 flex items-center justify-center min-h-screen p-2">
+                    <div id="game-container" class="w-full max-w-md mx-auto text-white scale-90">
+                        <div class="text-center mb-2"><h1 class="text-2xl font-bold text-amber-300">Jogo do Tigrinho</h1></div>
+                        <div class="slot-container p-3 rounded-lg">
+                            <div class="flex justify-around mb-3">
+                                <div class="reel" id="reel1"></div>
+                                <div class="reel" id="reel2"></div>
+                                <div class="reel" id="reel3"></div>
+                            </div>
+                            <div id="message-box" class="h-6 text-center text-lg font-bold text-yellow-300"></div>
+                        </div>
+                        <div class="bg-purple-800/50 p-2 rounded-b-lg -mt-1">
+                            <div class="flex justify-between items-center text-sm mb-3 px-1">
+                                <div><span class="font-semibold text-purple-300">SALDO:</span> <span id="balance" class="font-bold text-white">Carregando...</span></div>
+                                <div><span class="font-semibold text-purple-300">APOSTA:</span> <span id="bet-amount" class="font-bold text-white"></span></div>
+                            </div>
+                            <div class="flex justify-center items-center gap-2 mb-3">
+                                <button id="decrease-bet" class="bet-btn w-8 h-8 rounded-full text-lg font-bold">-</button>
+                                <span class="text-lg font-bold text-white w-16 text-center" id="current-bet-display"></span>
+                                <button id="increase-bet" class="bet-btn w-8 h-8 rounded-full text-lg font-bold">+</button>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="spin-button" class="btn-spin w-full py-2 rounded-lg text-lg font-bold uppercase">Girar</button>
+                                <button id="bet-all-button" class="bg-red-600 w-full py-2 rounded-lg text-lg font-bold uppercase">Apostar Tudo</button>
+                            </div>
+                        </div>
+                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const parent = window.parent;
+                            const balanceEl = document.getElementById('balance');
+                            const betAmountEl = document.getElementById('bet-amount');
+                            const currentBetDisplayEl = document.getElementById('current-bet-display');
+                            const spinButton = document.getElementById('spin-button');
+                            const betAllButton = document.getElementById('bet-all-button');
+                            const decreaseBetBtn = document.getElementById('decrease-bet');
+                            const increaseBetBtn = document.getElementById('increase-bet');
+                            const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+                            const messageBox = document.getElementById('message-box');
+                            
+                            const symbols = ['🐯', '🍊', '💰', '💎', '🔔', '🧧'];
+                            const payouts = {'🐯': 20, '💰': 15, '💎': 10, '🧧': 8, '🍊': 5, '🔔': 3};
+                            const betOptions = [1, 2, 5, 10, 20, 50];
+                            let currentBetIndex = 2;
+                            let isSpinning = false;
+                            let localBalance = 0;
+
+                            window.addEventListener('message', (event) => {
+                                if (event.data && event.data.type === 'init') {
+                                    localBalance = event.data.balance;
+                                    updateUI();
+                                }
+                            });
+
+                            parent.postMessage({ type: 'tigrinhoReady' }, '*');
+
+                            function setupReels() {
+                                reels.forEach(reel => {
+                                    reel.innerHTML = '';
+                                    const symbolContainer = document.createElement('div');
+                                    symbolContainer.className = 'reel-symbols';
+                                    for (let i = 0; i < symbols.length * 5; i++) {
+                                        const symbolDiv = document.createElement('div');
+                                        symbolDiv.textContent = symbols[i % symbols.length];
+                                        symbolContainer.appendChild(symbolDiv);
+                                    }
+                                    reel.appendChild(symbolContainer);
+                                });
+                            }
+
+                            function updateUI(betAmount = null) {
+                                const bet = betAmount !== null ? betAmount : betOptions[currentBetIndex];
+                                if (balanceEl) balanceEl.textContent = 'R$' + localBalance.toFixed(2);
+                                if (betAmountEl) betAmountEl.textContent = 'R$' + bet.toFixed(2);
+                                if (currentBetDisplayEl) currentBetDisplayEl.textContent = 'R$ ' + bet;
+                                if (spinButton) {
+                                    spinButton.disabled = bet > localBalance || isSpinning;
+                                    betAllButton.disabled = localBalance <= 0 || isSpinning;
+                                    spinButton.style.opacity = spinButton.disabled ? '0.5' : '1';
+                                    betAllButton.style.opacity = betAllButton.disabled ? '0.5' : '1';
+                                }
+                            }
+
+                            function showMsg(text, isWin = false) {
+                                if (!messageBox) return;
+                                messageBox.textContent = text;
+                                messageBox.style.color = isWin ? '#facc15' : '#f87171';
+                                messageBox.style.opacity = '1';
+                                setTimeout(() => { messageBox.style.opacity = '0'; }, 2500);
+                            }
+
+                            function doSpin(bet) {
+                                if (isSpinning || localBalance < bet) return;
+                                isSpinning = true;
+                                
+                                localBalance -= bet;
+                                parent.postMessage({ type: 'spin', amount: bet }, '*');
+                                updateUI(bet);
+
+                                const shouldWin = Math.random() < 0.4;
+                                let finalIndexes = [];
+                                if (shouldWin) {
+                                    const winIdx = Math.floor(Math.random() * symbols.length);
+                                    finalIndexes = [winIdx, winIdx, winIdx];
+                                } else {
+                                    finalIndexes = [Math.floor(Math.random() * symbols.length), Math.floor(Math.random() * symbols.length), Math.floor(Math.random() * symbols.length)];
+                                }
+                                const finalSymbols = finalIndexes.map(i => symbols[i]);
+                                reels.forEach((reel, idx) => {
+                                    const sC = reel.querySelector('.reel-symbols');
+                                    if (!sC) return;
+                                    const sH = sC.querySelector('div').clientHeight;
+                                    const sCt = sC.childElementCount;
+                                    const fP = (sCt - symbols.length - finalIndexes[idx]) * sH;
+                                    sC.style.transition = 'top ' + (2.5 + idx * 0.5) + 's cubic-bezier(0.25, 0.1, 0.25, 1)';
+                                    sC.style.top = '-' + fP + 'px';
+                                });
+                                setTimeout(() => {
+                                    checkWin(finalSymbols, bet);
+                                    isSpinning = false;
+                                    updateUI();
+                                }, 3500);
+                            }
+
+                            function checkWin(finalSymbols, bet) {
+                                const [s1, s2, s3] = finalSymbols;
+                                if (s1 === s2 && s2 === s3) {
+                                    const winnings = bet * payouts[s1];
+                                    localBalance += winnings;
+                                    parent.postMessage({ type: 'win', amount: winnings }, '*');
+                                    showMsg('Você ganhou R$' + winnings.toFixed(2) + '!', true);
+                                } else {
+                                    showMsg("Tente novamente!", false);
+                                }
+                                updateUI();
+                            }
+
+                            spinButton.addEventListener('click', () => doSpin(betOptions[currentBetIndex]));
+                            betAllButton.addEventListener('click', () => {
+                                if(localBalance > 0) doSpin(localBalance);
+                            });
+                            decreaseBetBtn.addEventListener('click', () => { if (currentBetIndex > 0) { currentBetIndex--; updateUI(); } });
+                            increaseBetBtn.addEventListener('click', () => { if (currentBetIndex < betOptions.length - 1) { currentBetIndex++; updateUI(); } });
+                            
+                            setupReels();
+                            updateUI();
+                        });
+                    <\/script>
+                </body>
+                </html>`;
+            }
+
+            startGame();
+        });
+    </script>
+</body>
+</html>
+�

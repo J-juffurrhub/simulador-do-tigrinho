@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfólio de Serviços Digitais</title>
+
+    <!-- Meta Tags para Preview (Discord/Telegram) - A IMAGEM VAI APARECER AQUI -->
+    <meta property="og:title" content="Portfólio de Serviços Digitais">
+    <meta property="og:description" content="Technical Asset Developer & Video Editor">
+    <meta property="og:image" content="https://files.catbox.moe/5b0vc1.png">
+    <meta property="og:type" content="website">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { 
@@ -20,7 +27,10 @@
 <body class="text-gray-100 p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto">
-        <header class="text-center mb-12">
+        
+        <!-- O BANNER VISUAL FOI REMOVIDO DAQUI -->
+
+        <header class="text-center mb-12 mt-10">
             <img src="https://files.catbox.moe/qrcs8a.png" alt="Profile" class="w-32 h-32 rounded-full border-4 border-blue-500 mx-auto mb-4 shadow-lg object-cover">
             <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                 Portfólio de Serviços
@@ -123,34 +133,13 @@
 
     <script>
         const policies = {
-            'minecraft': { 
-                title: 'Regras: Skin Minecraft', 
-                text: '• Prazo: até 48h. Se houver atraso superior a 4 dias, concedo desconto de R$ 1,00 para cada 5h de atraso.<br>• Incluso: 1 revisão gratuita.<br>• Pagamento antecipado.' 
-            },
-            'avatar': { 
-                title: 'Regras: Avatar VRChat', 
-                text: '• Prazo: 15 a 30 dias úteis.<br>• Necessário base prévia do cliente.<br>• Inclui setup de PhysBones e Menus.<br>• Otimização para Quest/PC.<br>• Não realizo modelagem 3D do zero.<br>• Suporte técnico pós-entrega incluído.' 
-            },
-            'video-short': { 
-                title: 'Regras: Vídeos Curtos', 
-                text: '• Vídeos até 70s.<br>• Pagamento antecipado.<br>• Inclui 2 rodadas de alterações.<br>• Direitos de uso exclusivos após pagamento.' 
-            },
-            'video-long': { 
-                title: 'Regras: Vídeos Longos', 
-                text: '• Prazo: Pode ocorrer atrasos de até 4 dias úteis além do prazo acordado, devido à complexidade.<br>• Envio de material via Drive/Mega.<br>• Pagamento 50% antecipado.' 
-            },
-            'bot-one': { 
-                title: 'Regras: Bot Discord (Projeto Único)', 
-                text: '• Código-fonte CRIPTOGRAFADO (sem IA ou complexidades extra).<br>• Garantia de 7 dias para correção de bugs no código entregue.<br>• O cliente não deve solicitar suporte contínuo para alterações após a entrega sem taxa adicional.<br>• Não inclui hospedagem.' 
-            },
-            'creator': { 
-                title: 'Regras: Plano Content Creator', 
-                text: '• Pagamento mensal antecipado (dia 05).<br>• Prioridade na agenda.<br>• Revisões inclusas conforme plano definido em contrato.' 
-            },
-            'bot-hosting': { 
-                title: 'Regras: Plano Elite Bot Hosting', 
-                text: '• Hospedagem 24/7 no meu servidor.<br>• Código-fonte ABERTO.<br>• Monitoramento diário.<br>• Inclui correções, ajustes de banco de dados e novas funções básicas dentro do limite de horas mensais.' 
-            }
+            'minecraft': { title: 'Regras: Skin Minecraft', text: '• Prazo: até 48h. Se houver atraso superior a 4 dias, concedo desconto de R$ 1,00 para cada 5h de atraso.<br>• Incluso: 1 revisão gratuita.<br>• Pagamento antecipado.' },
+            'avatar': { title: 'Regras: Avatar VRChat', text: '• Prazo: 15 a 30 dias úteis.<br>• Necessário base prévia do cliente.<br>• Inclui setup de PhysBones e Menus.<br>• Otimização para Quest/PC.<br>• Não realizo modelagem 3D do zero.<br>• Suporte técnico pós-entrega incluído.' },
+            'video-short': { title: 'Regras: Vídeos Curtos', text: '• Vídeos até 70s.<br>• Pagamento antecipado.<br>• Inclui 2 rodadas de alterações.<br>• Direitos de uso exclusivos após pagamento.' },
+            'video-long': { title: 'Regras: Vídeos Longos', text: '• Prazo: Pode ocorrer atrasos de até 4 dias úteis além do prazo acordado, devido à complexidade.<br>• Envio de material via Drive/Mega.<br>• Pagamento 50% antecipado.' },
+            'bot-one': { title: 'Regras: Bot Discord (Projeto Único)', text: '• Código-fonte CRIPTOGRAFADO (sem IA ou complexidades extra).<br>• Garantia de 7 dias para correção de bugs no código entregue.<br>• O cliente não deve solicitar suporte contínuo para alterações após a entrega sem taxa adicional.<br>• Não inclui hospedagem.' },
+            'creator': { title: 'Regras: Plano Content Creator', text: '• Pagamento mensal antecipado (dia 05).<br>• Prioridade na agenda.<br>• Revisões inclusas conforme plano definido em contrato.' },
+            'bot-hosting': { title: 'Regras: Plano Elite Bot Hosting', text: '• Hospedagem 24/7 no meu servidor.<br>• Código-fonte ABERTO.<br>• Monitoramento diário.<br>• Inclui correções, ajustes de banco de dados e novas funções básicas dentro do limite de horas mensais.' }
         };
 
         function openPolicy(type) {
